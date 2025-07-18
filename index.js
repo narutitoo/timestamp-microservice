@@ -1,39 +1,45 @@
+require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
+app.use(cors({ optionsSuccessStatus: 200 }));
+app.use(express.static('public'));
+
 app.get('/', (req, res) => {
-  res.send('Timestamp Microservice');
+  res.sendFile(__dirname + '/views/index.html');
 });
 
-// Ruta con fecha opcional usando lógica en lugar de signo de pregunta
-app.get('/api/:date', (req, res) => {
-  let { date } = req.params;
+// Endpoint principal
+app.get('/api/:date?', (req, res) => {
+  let dateString = req.params.date;
 
-  if (/^\d+$/.test(date)) {
-    date = parseInt(date);
+  let date;
+
+  // Si no se proporciona una fecha, usar la actual
+  if (!dateString) {
+    date = new Date();
+  } else {
+    // Si es número (timestamp)
+    if (!isNaN(dateString)) {
+      date = new Date(parseInt(dateString));
+    } else {
+      date = new Date(dateString);
+    }
   }
 
-  const parsedDate = new Date(date);
-  if (parsedDate.toString() === "Invalid Date") {
+  if (date.toString() === 'Invalid Date') {
     return res.json({ error: "Invalid Date" });
   }
 
-  return res.json({
-    unix: parsedDate.getTime(),
-    utc: parsedDate.toUTCString()
-  });
-});
-
-// Ruta sin fecha para devolver la actual
-app.get('/api', (req, res) => {
-  const now = new Date();
   res.json({
-    unix: now.getTime(),
-    utc: now.toUTCString()
+    unix: date.getTime(),
+    utc: date.toUTCString()
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+// Puerto
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`App listening on port ${port}`);
 });
